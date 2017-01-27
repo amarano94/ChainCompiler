@@ -69,7 +69,10 @@ compilation is executed, and will be used heavily during this modification proce
 -fsyntax-only      : runs up through the parser
 -emit-llvm         : uses the LLVM representation for assembler and object files
 
-
+Steps outlining how to add new expressions and statements to Clang are described in
+llvm/tools/clang/docs/InternalsManual.rst under "How to add an expression or statement".
+This document will be included in this repo.
+ 
 The Lexer:
 
 
