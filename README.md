@@ -77,27 +77,35 @@ In more detail the steps necessary to add statements and expressions to the Clan
 are explained below:
 
 Statements:
+
 References to the new statement must be created in clang/include/clang subdirectories.
 The easiest way to see statement definitions is to grep for a statement that is already
 defined (like WhileStmt) and mimic the places where new definitions are located.
+
 Basic/TokenKinds.def contains all lexer keywords, new statements need to be added there.
+
 Basic/StmtNodes.td holds the definitions of new statement keywords as well as new
 expression keywords.
+
 Serialization/ASTBitCodes.h contains the records of statements and subexpressions that
 will be present in the AST after parsing.
+
 AST/Stmt.h Contains the definition of each statement class. This is where the statement itself
 is defined, and contains any special functions necessary for the correct compilation of
-the statement. 
+the statement.
+
 AST/RecursiveASTVisitor.h Constains statements like DEF_TRAVERSE_STMT(...). It is necessary
 for correct compilation of your statement to add one here or else the statement cannot be
 traversed through for sub-statements or sub-expressions.
 
 The rest of the functionality will be placed in the clang/lib subdirectories, where
-.cpp files that match the headers in the include directories implement function definitions.
+.cpp files that match the headers in the include directories implement function definitions:
+
 Parse/ParseStmt.cpp You will use the keywords that you have added to the lexer in
 clang/include/clang/Basic/TokenKinds.def to determine which parts of the statement are
 sub-expressions or statements and use them as arguments to ActOnYourStatement, which you
 call here.
+
 Sema/TreeTransform.h This is the brunt of the semantic analysis and rebuilding of statements
 and expressions to AST. It is necessary to call or implement (though implementation may be
 somewhere else) the following functions specific to your statement:
@@ -107,17 +115,24 @@ somewhere else) the following functions specific to your statement:
 
 Sema/SemaStmt.cpp This will use your statement class and contains the implementation of
 ActOnYourStatement
+
 CodeGen/CGStmt.cpp This 'emits' your statement as a form useful for backend analysis.
 You will implement the function EmitYourStatement.
+
 Serialization/ASTReaderStmt.cpp You will implement the reader version of VisitYourStatement
 where you create an empty context of your statement.
-Serialization/ASTWriterStmt.cpp You will implement the writer version of VisitYourStatement
+
+Serialization/ASTWriterStmt.cpp You will implement the writer version of VisitYourStatement.
+
 AST/StmtPrinter.cpp This prints out your new AST after creating it in codegen, there is no
 compiler functionality but it is useful for debugging and getting output during compilation.
+
 AST/Stmt.cpp This contains the definitions of the statement class you created in Stmt.h listed
 above. All class functions are defined here.
+
 AST/ExprConstant.cpp You may or may not need to modify here; this transforms your statement
 into an expression.
+
 AST/StmtProfile, you will need to call VisitYourStatment here.
 
 This is what you need to add a statement to the frontend (Lexing through basic 
@@ -167,3 +182,5 @@ Unlike statements, expressions need to be classified in lib/AST/ExprClassificiat
 type of expression returns with a call to ClassifyInternal of the subexpression until the entire expression is classified.
 lib/AST/ExprConstant.cpp is also used to check for constant expressions/expression folding, and a case must be added in there
 as well for your expression.
+
+Semantic analysis for expressions is located in clang/lib/Sema like with statements.
