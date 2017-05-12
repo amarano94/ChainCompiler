@@ -132,5 +132,38 @@ Adding an expression in essence is similar to adding a statement, but traversing
 and expression is more complex, because parsing an expression with subexpressions requires
 different steps than parsing a statement with subexpressions.
 
-The lexing step is the same. 
+The lexing step is the same, as is adding the new keyword to StmtNodes.td.
+ASTBitCodes.h also contains the expression records with the statement records.
 
+Parser.h in clang/include/clang/Parse includes a function for each expression of the form ExprResult ParseChInExpression();
+This is different than the statements because the statements didn't contain explicit parsing, it was implied by the function
+VisitXXXStmt where the passed value was an internal sub-expression or statement. For expressions, the parsing is done 
+explicitly in order to account for unique sub-expressions or other unusual behavior. However, it is extremely difficult to
+overload functionality of existing symbols for new parsing purposes in C, because those other definitions are hard-coded
+(For example, using {} as sub-expression demarcation instead of (), because {} is already hard-coded as a block identifier
+by the compiler). Be wary when trying to overload already-used symbols, you'd be better using symbols that aready have that
+functionality (i.e. () for sub-expression demarcation).
+
+clang/include/clang/AST/Expr.h is where representations of expressions are defined, also in classes as statements were. 
+Like with the statements, a DEF_TRAVERSE_STMT must be included for the expression in RecursiveASTVisitor.h.
+
+In the lib directories, there are similarities to adding statements as well.
+Sema/SemaStmt.cpp also contains VisitYourExpr functions, and you must add one for your expression.
+Sema/TreeTransform.h needs a ActOnYourExpr, RebuildYourExpr functions.
+
+Sema/SemaExpr.cpp contains information on expressions where SemaStmt.cpp contains information on statements. 
+This file contains implementation details of ActOnYourExpr.
+
+Again, ASTStmtReader and ASTStmtWriter both need a version of VisitYourExpr.
+
+Parse/ParseExpr.cpp is the expression mirror of ParseStmt.cpp and will contain the implementation of your ParseYourExpression
+function. It will call ActOnYourExpr.
+
+There is also space in StmtPrinter to write a VisitYourExpr function for debug print output.
+
+AST/Expr.cpp is the expression version of Stmt.cpp and will contain the implementation details of your expression class.
+
+Unlike statements, expressions need to be classified in lib/AST/ExprClassificiation.cpp. In a large switch statement, each
+type of expression returns with a call to ClassifyInternal of the subexpression until the entire expression is classified.
+lib/AST/ExprConstant.cpp is also used to check for constant expressions/expression folding, and a case must be added in there
+as well for your expression.
